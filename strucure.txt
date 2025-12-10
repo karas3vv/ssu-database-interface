@@ -1,0 +1,20 @@
+restaurant-interface/
+  backend/
+    app/
+      __init__.py
+      main.py
+      config.py
+      db.py
+      models.py
+      schemas.py
+      auth.py
+      dependencies.py
+      routers/
+        __init__.py
+        reference.py
+        orders.py
+        reports.py
+        search.py
+        views_input.py
+  frontend/
+    ... (сделаем после бэка)
