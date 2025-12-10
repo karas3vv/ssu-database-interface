@@ -17,4 +17,13 @@ restaurant-interface/
         search.py
         views_input.py
   frontend/
-    ... (сделаем после бэка)
+    src/
+      main.jsx
+      App.jsx
+      api.js
+      pages/
+        LoginPage.jsx
+        ReferencesPage.jsx
+      components/
+        LoginForm.jsx
+        NavMenu.jsx
