@@ -1,45 +1,69 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from pathlib import Path
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
-from typing import List
+from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..dependencies import get_current_user
-from .. import schemas
+from ..deps import require_login
 
 router = APIRouter(prefix="/отчёты", tags=["Отчёты"])
 
-@router.get("/выручка")
-def get_revenue(date_from: str, date_to: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    row = db.execute(
-        text("SELECT get_revenue(:df, :dt)"),
-        {"df": date_from, "dt": date_to},
-    ).scalar()
-    return {"выручка": float(row) if row is not None else 0.0}
+BASE_DIR = Path(__file__).resolve().parents[1]
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-@router.get("/продажи_блюд", response_model=List[schemas.DishSalesRow])
-def dishes_sales(db: Session = Depends(get_db), user=Depends(get_current_user)):
-    rows = db.execute(text("SELECT * FROM dishes_sales()")).all()
-    return [
-        schemas.DishSalesRow(
-            dish_name=r[0],
-            total_sold=r[1],
-            total_revenue=float(r[2]),
-            avg_price=float(r[3]),
-        )
-        for r in rows
-    ]
 
-@router.get("/статистика_гостей", response_model=List[schemas.GuestStatsRow])
-def guest_statistics(limit: int = 10, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    rows = db.execute(text("SELECT * FROM guest_statistics(:lim)"), {"lim": limit}).all()
-    return [
-        schemas.GuestStatsRow(
-            guest_id=r[0],
-            full_name=r[1],
-            total_orders=r[2],
-            total_revenue=float(r[3]),
-            avg_check=float(r[4]),
-        )
-        for r in rows
-    ]
+@router.get("", response_class=HTMLResponse)
+def reports_index(request: Request):
+    user = require_login(request)
+    return templates.TemplateResponse("reports/index.html", {"request": request, "user": user, "title": "Отчёты"})
+
+
+@router.post("/выручка", response_class=HTMLResponse)
+def report_revenue(
+    request: Request,
+    db: Session = Depends(get_db),
+    date_from: str = Form(...),
+    date_to: str = Form(...),
+):
+    user = require_login(request)
+    value = db.execute(
+        text("SELECT get_revenue(:d1::date, :d2::date) AS revenue"),
+        {"d1": date_from, "d2": date_to},
+    ).mappings().first()
+
+    return templates.TemplateResponse(
+        "reports/result_table.html",
+        {
+            "request": request,
+            "user": user,
+            "title": "Выручка за период",
+            "columns": [("revenue", "Выручка")],
+            "rows": [value] if value else [{"revenue": 0}],
+            "back_url": "/отчёты",
+        },
+    )
+
+
+@router.post("/продажи-блюд", response_class=HTMLResponse)
+def report_dishes_sales(request: Request, db: Session = Depends(get_db)):
+    user = require_login(request)
+    rows = db.execute(text("SELECT * FROM dishes_sales()")).mappings().all()
+
+    return templates.TemplateResponse(
+        "reports/result_table.html",
+        {
+            "request": request,
+            "user": user,
+            "title": "Продажи блюд",
+            "columns": [
+                ("dish_name", "Блюдо"),
+                ("total_sold", "Продано (шт.)"),
+                ("total_revenue", "Выручка"),
+                ("avg_price", "Средняя сумма позиции"),
+            ],
+            "rows": rows,
+            "back_url": "/отчёты",
+        },
+    )

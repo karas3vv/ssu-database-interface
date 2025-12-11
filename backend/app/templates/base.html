@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "Интерфейс базы данных ресторана" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+</head>
+<body>
+  <header class="шапка">
+    <div class="контейнер строка">
+      <div class="логотип">Ресторан</div>
+      <nav class="меню">
+        <a class="ссылка" href="/">Главная</a>
+
+        {% if user %}
+          <a class="ссылка" href="/справочники/блюда">Справочники</a>
+          <a class="ссылка" href="/заказы">Заказы</a>
+          <a class="ссылка" href="/отчёты">Отчёты</a>
+          <a class="ссылка" href="/ввод-через-представление">Ввод через представление</a>
+          <a class="ссылка" href="/поиск">Поиск</a>
+
+          <form method="post" action="/выход" class="встроенная-форма">
+            <button class="кнопка вторичная" type="submit">Выйти</button>
+          </form>
+        {% else %}
+          <a class="кнопка" href="/вход">Войти</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="контейнер">
+    {% if user %}
+      <div class="плашка">
+        Выполнен вход: {{ user.login }} (роль: {{ "Администратор" if user.role == "admin" else "Пользователь" }})
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

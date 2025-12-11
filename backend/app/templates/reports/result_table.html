@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <div class="таблица-обертка">
+    <table class="таблица">
+      <thead>
+        <tr>
+          {% for key, label in columns %}
+            <th>{{ label }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            {% for key, label in columns %}
+              <td>{{ r[key] }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p><a class="кнопка вторичная" href="{{ back_url }}">Назад</a></p>
+{% endblock %}

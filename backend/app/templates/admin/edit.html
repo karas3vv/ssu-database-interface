@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <form method="post" class="форма" action="{{ action }}">
+    <label class="поле">
+      <span class="подпись">Наименование</span>
+      <input name="name" type="text" required value="{{ values.name or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Категория</span>
+      <input name="category" type="text" value="{{ values.category or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Цена</span>
+      <input name="price" type="number" step="0.01" min="0" required value="{{ values.price or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Страна происхождения</span>
+      <input name="country_of_origin" type="text" value="{{ values.country_of_origin or '' }}">
+    </label>
+
+    <button class="кнопка" type="submit">Сохранить</button>
+    <a class="кнопка вторичная" href="/справочники/блюда">Отмена</a>
+  </form>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Отчёты</h1>
+
+  <h2>Выручка</h2>
+  <form method="post" class="форма" action="/отчёты/выручка">
+    <label class="поле">
+      <span class="подпись">Дата начала</span>
+      <input type="date" name="date_from" required>
+    </label>
+    <label class="поле">
+      <span class="подпись">Дата окончания</span>
+      <input type="date" name="date_to" required>
+    </label>
+    <button class="кнопка" type="submit">Показать</button>
+  </form>
+
+  <h2>Продажи блюд</h2>
+  <form method="post" action="/отчёты/продажи-блюд">
+    <button class="кнопка" type="submit">Показать</button>
+  </form>
+
+  <p class="плашка">Остальные отчёты добавим следующим шагом.</p>
+{% endblock %}

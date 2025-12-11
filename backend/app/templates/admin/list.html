@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ entity_title }}</h1>
+
+  {% if allow_edit %}
+    <p><a class="кнопка" href="{{ create_url }}">Добавить</a></p>
+  {% endif %}
+
+  <div class="таблица-обертка">
+    <table class="таблица">
+      <thead>
+        <tr>
+          {% for key, label in columns %}
+            <th>{{ label }}</th>
+          {% endfor %}
+          {% if allow_edit %}
+            <th>Действия</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            {% for key, label in columns %}
+              <td>{{ r[key] }}</td>
+            {% endfor %}
+            {% if allow_edit %}
+              <td class="действия">
+                <a class="кнопка вторичная" href="{{ edit_url_prefix }}{{ r['id'] }}">Изменить</a>
+                <form method="post" action="{{ delete_url_prefix }}{{ r['id'] }}" class="встроенная-форма" onsubmit="return confirm('Удалить запись?');">
+                  <button class="кнопка опасная" type="submit">Удалить</button>
+                </form>
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

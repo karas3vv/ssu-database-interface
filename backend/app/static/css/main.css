@@ -1,0 +1,153 @@
+:root {
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  background: #f6f7f9;
+  color: #111;
+}
+
+.контейнер {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.шапка {
+  background: #ffffff;
+  border-bottom: 1px solid #d9dee6;
+}
+
+.строка {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.логотип {
+  font-weight: 700;
+}
+
+.меню {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.ссылка {
+  color: #0b57d0;
+  text-decoration: none;
+}
+
+.ссылка:hover {
+  text-decoration: underline;
+}
+
+.кнопка {
+  background: #0b57d0;
+  color: #fff;
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.кнопка.вторичная {
+  background: #5f6368;
+}
+
+.встроенная-форма {
+  display: inline;
+  margin: 0;
+}
+
+.форма {
+  background: #fff;
+  border: 1px solid #d9dee6;
+  border-radius: 12px;
+  padding: 16px;
+  max-width: 520px;
+}
+
+.поле {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.подпись {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 16px;
+  border: 1px solid #c7cdd6;
+  border-radius: 8px;
+}
+
+.плашка {
+  background: #e8f0fe;
+  border: 1px solid #c6dafc;
+  color: #1a3a8a;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.ошибка {
+  background: #fde7e9;
+  border: 1px solid #f6b3b8;
+  color: #7a0010;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.таблица-обертка {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #d9dee6;
+  border-radius: 12px;
+}
+
+.таблица {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.таблица th, .таблица td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e9f0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.действия {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.кнопка.опасная {
+  background: #b3261e;
+}
+
+select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 16px;
+  border: 1px solid #c7cdd6;
+  border-radius: 8px;
+  background: #fff;
+}

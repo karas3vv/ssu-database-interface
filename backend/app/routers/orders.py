@@ -1,46 +1,261 @@
-from fastapi import APIRouter, Depends, HTTPException
+from pathlib import Path
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from typing import List
-
 from ..db import get_db
-from .. import models, schemas
-from ..dependencies import get_current_user
+from ..deps import require_login, require_admin
 
 router = APIRouter(prefix="/заказы", tags=["Заказы"])
 
-@router.get("/", response_model=List[schemas.OrderOut])
-def list_orders(db: Session = Depends(get_db), user=Depends(get_current_user)):
-    orders = db.query(models.Order).all()
-    return orders
+BASE_DIR = Path(__file__).resolve().parents[1]
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-@router.get("/{order_id}", response_model=schemas.OrderOut)
-def get_order(order_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    order = db.query(models.Order).get(order_id)
-    if not order:
-        raise HTTPException(404, "Заказ не найден")
-    return order
 
-@router.post("/", response_model=schemas.OrderOut)
-def create_order(data: schemas.OrderCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    order = models.Order(
-        guest_id=data.guest_id,
-        table_id=data.table_id,
-        waiter_id=data.waiter_id,
-        order_time=data.order_time,
-        status=data.status,
-    )
-    db.add(order)
-    db.flush()
+@router.get("", response_class=HTMLResponse)
+def orders_list(request: Request, db: Session = Depends(get_db)):
+    user = require_login(request)
 
-    for item in data.items:
-        oi = models.OrderItem(
-            order_id=order.id,
-            dish_id=item.dish_id,
-            quantity=item.quantity,
+    rows = db.execute(
+        text(
+            """
+            SELECT
+              o.id,
+              o.order_time,
+              o.status,
+              o.total_amount,
+              g.last_name || ' ' || g.first_name AS guest_name,
+              t.table_number AS table_number,
+              w.last_name || ' ' || w.first_name AS waiter_name
+            FROM orders o
+            LEFT JOIN guests g ON g.id = o.guest_id
+            LEFT JOIN tables t ON t.id = o.table_id
+            LEFT JOIN waiters w ON w.id = o.waiter_id
+            ORDER BY o.id DESC
+            """
         )
-        db.add(oi)
+    ).mappings().all()
+
+    return templates.TemplateResponse(
+        "orders/list.html",
+        {
+            "request": request,
+            "user": user,
+            "title": "Заказы",
+            "rows": rows,
+            "allow_edit": user.get("role") == "admin",
+        },
+    )
+
+
+@router.get("/создать", response_class=HTMLResponse)
+def order_create_form(request: Request, db: Session = Depends(get_db)):
+    user = require_admin(request)
+
+    guests = db.execute(text("SELECT id, last_name, first_name FROM guests ORDER BY last_name, first_name")).mappings().all()
+    tables_ = db.execute(text("SELECT id, table_number FROM tables ORDER BY table_number")).mappings().all()
+    waiters = db.execute(text("SELECT id, last_name, first_name FROM waiters ORDER BY last_name, first_name")).mappings().all()
+
+    return templates.TemplateResponse(
+        "orders/edit.html",
+        {
+            "request": request,
+            "user": user,
+            "title": "Создать заказ",
+            "action": "/заказы/создать",
+            "order": {"guest_id": "", "table_id": "", "waiter_id": "", "status": "new"},
+            "guests": guests,
+            "tables": tables_,
+            "waiters": waiters,
+            "items": [],
+            "dishes": [],
+            "allow_edit": True,
+        },
+    )
+
+
+@router.post("/создать")
+def order_create(
+    request: Request,
+    db: Session = Depends(get_db),
+    guest_id: int = Form(...),
+    table_id: str = Form(""),
+    waiter_id: str = Form(""),
+    status: str = Form("new"),
+):
+    require_admin(request)
+
+    row = db.execute(
+        text(
+            """
+            INSERT INTO orders(guest_id, table_id, waiter_id, order_time, total_amount, status)
+            VALUES (:guest_id,
+                    NULLIF(:table_id,'')::int,
+                    NULLIF(:waiter_id,'')::int,
+                    :order_time,
+                    0,
+                    :status)
+            RETURNING id
+            """
+        ),
+        {
+            "guest_id": guest_id,
+            "table_id": table_id,
+            "waiter_id": waiter_id,
+            "order_time": datetime.now(),
+            "status": status.strip(),
+        },
+    ).scalar_one()
 
     db.commit()
-    db.refresh(order)
-    return order
+    return RedirectResponse(url=f"/заказы/{row}", status_code=303)
+
+
+@router.get("/{order_id}", response_class=HTMLResponse)
+def order_edit(order_id: int, request: Request, db: Session = Depends(get_db)):
+    user = require_login(request)
+
+    order = db.execute(
+        text("SELECT id, guest_id, table_id, waiter_id, status, total_amount, order_time FROM orders WHERE id=:id"),
+        {"id": order_id},
+    ).mappings().first()
+
+    if not order:
+        return templates.TemplateResponse(
+            "message.html",
+            {"request": request, "user": user, "title": "Ошибка", "message": "Заказ не найден."},
+            status_code=404,
+        )
+
+    items = db.execute(
+        text(
+            """
+            SELECT
+              oi.dish_id,
+              d.name AS dish_name,
+              d.price,
+              oi.quantity,
+              (oi.quantity * d.price) AS amount
+            FROM order_items oi
+            JOIN dishes d ON d.id = oi.dish_id
+            WHERE oi.order_id = :order_id
+            ORDER BY d.name
+            """
+        ),
+        {"order_id": order_id},
+    ).mappings().all()
+
+    guests = db.execute(text("SELECT id, last_name, first_name FROM guests ORDER BY last_name, first_name")).mappings().all()
+    tables_ = db.execute(text("SELECT id, table_number FROM tables ORDER BY table_number")).mappings().all()
+    waiters = db.execute(text("SELECT id, last_name, first_name FROM waiters ORDER BY last_name, first_name")).mappings().all()
+    dishes_ = db.execute(text("SELECT id, name, price FROM dishes ORDER BY name")).mappings().all()
+
+    return templates.TemplateResponse(
+        "orders/edit.html",
+        {
+            "request": request,
+            "user": user,
+            "title": f"Заказ №{order_id}",
+            "action": f"/заказы/{order_id}/сохранить",
+            "order": order,
+            "guests": guests,
+            "tables": tables_,
+            "waiters": waiters,
+            "items": items,
+            "dishes": dishes_,
+            "allow_edit": user.get("role") == "admin",
+        },
+    )
+
+
+@router.post("/{order_id}/сохранить")
+def order_save(
+    order_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    guest_id: int = Form(...),
+    table_id: str = Form(""),
+    waiter_id: str = Form(""),
+    status: str = Form(""),
+):
+    require_admin(request)
+
+    db.execute(
+        text(
+            """
+            UPDATE orders
+            SET guest_id=:guest_id,
+                table_id=NULLIF(:table_id,'')::int,
+                waiter_id=NULLIF(:waiter_id,'')::int,
+                status=:status
+            WHERE id=:id
+            """
+        ),
+        {"id": order_id, "guest_id": guest_id, "table_id": table_id, "waiter_id": waiter_id, "status": status.strip()},
+    )
+    db.commit()
+    return RedirectResponse(url=f"/заказы/{order_id}", status_code=303)
+
+
+@router.post("/{order_id}/позиция/добавить")
+def order_item_add(
+    order_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    dish_id: int = Form(...),
+    quantity: int = Form(...),
+):
+    require_admin(request)
+
+    db.execute(
+        text(
+            """
+            INSERT INTO order_items(order_id, dish_id, quantity)
+            VALUES (:order_id, :dish_id, :quantity)
+            ON CONFLICT (order_id, dish_id)
+            DO UPDATE SET quantity = order_items.quantity + EXCLUDED.quantity
+            """
+        ),
+        {"order_id": order_id, "dish_id": dish_id, "quantity": quantity},
+    )
+    db.commit()
+    return RedirectResponse(url=f"/заказы/{order_id}", status_code=303)
+
+
+@router.post("/{order_id}/позиция/изменить/{dish_id}")
+def order_item_update(
+    order_id: int,
+    dish_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    quantity: int = Form(...),
+):
+    require_admin(request)
+
+    db.execute(
+        text(
+            """
+            UPDATE order_items
+            SET quantity=:quantity
+            WHERE order_id=:order_id AND dish_id=:dish_id
+            """
+        ),
+        {"order_id": order_id, "dish_id": dish_id, "quantity": quantity},
+    )
+    db.commit()
+    return RedirectResponse(url=f"/заказы/{order_id}", status_code=303)
+
+
+@router.post("/{order_id}/позиция/удалить/{dish_id}")
+def order_item_delete(order_id: int, dish_id: int, request: Request, db: Session = Depends(get_db)):
+    require_admin(request)
+    db.execute(
+        text("DELETE FROM order_items WHERE order_id=:order_id AND dish_id=:dish_id"),
+        {"order_id": order_id, "dish_id": dish_id},
+    )
+    db.commit()
+    return RedirectResponse(url=f"/заказы/{order_id}", status_code=303)

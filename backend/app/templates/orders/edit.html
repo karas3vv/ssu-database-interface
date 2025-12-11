@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <form method="post" class="форма" action="{{ action }}">
+    <label class="поле">
+      <span class="подпись">Гость</span>
+      <select name="guest_id" required {% if not allow_edit %}disabled{% endif %}>
+        {% for g in guests %}
+          <option value="{{ g.id }}" {% if order.guest_id == g.id %}selected{% endif %}>
+            {{ g.last_name }} {{ g.first_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Стол</span>
+      <select name="table_id" {% if not allow_edit %}disabled{% endif %}>
+        <option value="">—</option>
+        {% for t in tables %}
+          <option value="{{ t.id }}" {% if order.table_id == t.id %}selected{% endif %}>
+            №{{ t.table_number }}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Официант</span>
+      <select name="waiter_id" {% if not allow_edit %}disabled{% endif %}>
+        <option value="">—</option>
+        {% for w in waiters %}
+          <option value="{{ w.id }}" {% if order.waiter_id == w.id %}selected{% endif %}>
+            {{ w.last_name }} {{ w.first_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Статус</span>
+      <input name="status" type="text" value="{{ order.status or '' }}" {% if not allow_edit %}disabled{% endif %}>
+    </label>
+
+    <div class="плашка">Текущая сумма: {{ order.total_amount or 0 }}</div>
+
+    {% if allow_edit %}
+      <button class="кнопка" type="submit">Сохранить</button>
+      <a class="кнопка вторичная" href="/заказы">Назад</a>
+    {% else %}
+      <a class="кнопка вторичная" href="/заказы">Назад</a>
+    {% endif %}
+  </form>
+
+  <h2>Состав заказа</h2>
+
+  {% if allow_edit %}
+    <form method="post" class="форма" action="/заказы/{{ order.id }}/позиция/добавить">
+      <label class="поле">
+        <span class="подпись">Блюдо</span>
+        <select name="dish_id" required>
+          {% for d in dishes %}
+            <option value="{{ d.id }}">{{ d.name }} ({{ d.price }})</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label class="поле">
+        <span class="подпись">Количество</span>
+        <input name="quantity" type="number" min="1" step="1" required value="1">
+      </label>
+
+      <button class="кнопка" type="submit">Добавить в заказ</button>
+    </form>
+  {% endif %}
+
+  <div class="таблица-обертка">
+    <table class="таблица">
+      <thead>
+        <tr>
+          <th>Блюдо</th>
+          <th>Цена</th>
+          <th>Количество</th>
+          <th>Сумма</th>
+          {% if allow_edit %}<th>Действия</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+          <tr>
+            <td>{{ it.dish_name }}</td>
+            <td>{{ it.price }}</td>
+            <td>{{ it.quantity }}</td>
+            <td>{{ it.amount }}</td>
+            {% if allow_edit %}
+              <td class="действия">
+                <form method="post" action="/заказы/{{ order.id }}/позиция/изменить/{{ it.dish_id }}" class="встроенная-форма">
+                  <input name="quantity" type="number" min="1" step="1" value="{{ it.quantity }}" style="width: 110px;">
+                  <button class="кнопка вторичная" type="submit">Изменить</button>
+                </form>
+
+                <form method="post" action="/заказы/{{ order.id }}/позиция/удалить/{{ it.dish_id }}" class="встроенная-форма"
+                      onsubmit="return confirm('Удалить позицию из заказа?');">
+                  <button class="кнопка опасная" type="submit">Удалить</button>
+                </form>
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

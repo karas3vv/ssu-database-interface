@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set title = "Вход" %}
+{% block content %}
+  <h1>Вход</h1>
+
+  {% if error %}
+    <div class="ошибка">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" class="форма" action="/вход">
+    <label class="поле">
+      <span class="подпись">Логин</span>
+      <input name="login" type="text" required autocomplete="username">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Пароль</span>
+      <input name="password" type="password" required autocomplete="current-password">
+    </label>
+
+    <button class="кнопка" type="submit">Войти</button>
+  </form>
+{% endblock %}
