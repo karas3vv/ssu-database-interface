@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Результаты поиска</h1>
+
+  <div class="таблица-обертка">
+    <table class="таблица">
+      <thead>
+        <tr>
+          <th>Заказ</th>
+          <th>Время</th>
+          <th>Гость</th>
+          <th>Стол</th>
+          <th>Официант</th>
+          <th>Статус</th>
+          <th>Сумма</th>
+          <th>Оплачено</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td><a class="ссылка" href="/заказы/{{ r.order_id }}">№{{ r.order_id }}</a></td>
+            <td>{{ r.order_time }}</td>
+            <td>{{ r.guest_name or "" }}</td>
+            <td>{{ r.table_number or "" }}</td>
+            <td>{{ r.waiter_name or "" }}</td>
+            <td>{{ r.status or "" }}</td>
+            <td>{{ r.total_amount or 0 }}</td>
+            <td>{{ r.paid_amount or 0 }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p><a class="кнопка вторичная" href="/поиск">Назад к поиску</a></p>
+{% endblock %}

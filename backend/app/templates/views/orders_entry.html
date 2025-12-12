@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Ввод заказа через представление</h1>
+
+  <form method="post" class="форма" action="/ввод-через-представление">
+    <label class="поле">
+      <span class="подпись">Гость</span>
+      <select name="guest_id" required>
+        {% for g in guests %}
+          <option value="{{ g.id }}">{{ g.last_name }} {{ g.first_name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Стол</span>
+      <select name="table_id">
+        <option value="">—</option>
+        {% for t in tables %}
+          <option value="{{ t.id }}">№{{ t.table_number }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Официант</span>
+      <select name="waiter_id">
+        <option value="">—</option>
+        {% for w in waiters %}
+          <option value="{{ w.id }}">{{ w.last_name }} {{ w.first_name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Сумма</span>
+      <input name="total_amount" type="number" step="0.01" min="0" value="0" required>
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Статус</span>
+      <input name="status" type="text" value="new" required>
+      <div class="плашка">Подсказка: если указать статус paid, может автоматически создаться платёж.</div>
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Бронирование (если есть)</span>
+      <input name="booking_id" type="number" min="1">
+    </label>
+
+    <button class="кнопка" type="submit">Создать заказ</button>
+  </form>
+{% endblock %}

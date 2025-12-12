@@ -67,3 +67,109 @@ def report_dishes_sales(request: Request, db: Session = Depends(get_db)):
             "back_url": "/отчёты",
         },
     )
+
+@router.post("/заказы-гостя", response_class=HTMLResponse)
+def report_guest_orders(
+    request: Request,
+    db: Session = Depends(get_db),
+    guest_id: int = Form(...),
+):
+    user = require_login(request)
+
+    rows = db.execute(
+        text("SELECT * FROM guest_orders(:guest_id)"),
+        {"guest_id": guest_id},
+    ).mappings().all()
+
+    columns = [
+        ("id", "Номер заказа"),
+        ("guest_id", "Гость"),
+        ("table_id", "Стол"),
+        ("waiter_id", "Официант"),
+        ("order_time", "Время"),
+        ("total_amount", "Сумма"),
+        ("status", "Статус"),
+        ("booking_id", "Бронирование"),
+    ]
+
+    return templates.TemplateResponse(
+        "reports/result_table.html",
+        {"request": request, "user": user, "title": "Заказы гостя", "columns": columns, "rows": rows, "back_url": "/отчёты"},
+    )
+
+
+@router.post("/свободные-столы", response_class=HTMLResponse)
+def report_free_tables(
+    request: Request,
+    db: Session = Depends(get_db),
+    date: str = Form(...),
+    start: str = Form(...),
+    end: str = Form(...),
+    guests: int = Form(...),
+):
+    user = require_login(request)
+
+    rows = db.execute(
+        text("SELECT * FROM free_tables(:d::date, :s::time, :e::time, :g::int)"),
+        {"d": date, "s": start, "e": end, "g": guests},
+    ).mappings().all()
+
+    columns = [
+        ("id", "Идентификатор"),
+        ("table_number", "Номер стола"),
+        ("seats", "Мест"),
+        ("status", "Статус"),
+    ]
+
+    return templates.TemplateResponse(
+        "reports/result_table.html",
+        {"request": request, "user": user, "title": "Свободные столы", "columns": columns, "rows": rows, "back_url": "/отчёты"},
+    )
+
+
+@router.post("/статистика-гостей", response_class=HTMLResponse)
+def report_guest_statistics(
+    request: Request,
+    db: Session = Depends(get_db),
+    limit: int = Form(10),
+):
+    user = require_login(request)
+
+    rows = db.execute(
+        text("SELECT * FROM guest_statistics(:limit)"),
+        {"limit": limit},
+    ).mappings().all()
+
+    columns = [
+        ("guest_id", "Гость (идентификатор)"),
+        ("full_name", "Гость"),
+        ("total_orders", "Заказов"),
+        ("total_revenue", "Выручка"),
+        ("avg_check", "Средний чек"),
+    ]
+
+    return templates.TemplateResponse(
+        "reports/result_table.html",
+        {"request": request, "user": user, "title": "Статистика гостей", "columns": columns, "rows": rows, "back_url": "/отчёты"},
+    )
+
+
+@router.post("/списать-продукты", response_class=HTMLResponse)
+def action_consume_products(
+    request: Request,
+    db: Session = Depends(get_db),
+    order_id: int = Form(...),
+):
+    user = require_login(request)
+
+    # Важно: функция меняет данные, поэтому коммитим.
+    row = db.execute(text("SELECT consume_products(:order_id) AS result"), {"order_id": order_id}).mappings().first()
+    db.commit()
+
+    columns = [("result", "Результат")]
+    rows = [row] if row else [{"result": "Операция выполнена."}]
+
+    return templates.TemplateResponse(
+        "reports/result_table.html",
+        {"request": request, "user": user, "title": "Списание продуктов по заказу", "columns": columns, "rows": rows, "back_url": "/отчёты"},
+    )

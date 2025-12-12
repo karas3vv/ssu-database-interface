@@ -22,3 +22,51 @@
 
   <p class="плашка">Остальные отчёты добавим следующим шагом.</p>
 {% endblock %}
+
+<h2>Заказы гостя</h2>
+<form method="post" class="форма" action="/отчёты/заказы-гостя">
+  <label class="поле">
+    <span class="подпись">Идентификатор гостя</span>
+    <input type="number" name="guest_id" min="1" required>
+  </label>
+  <button class="кнопка" type="submit">Показать</button>
+</form>
+
+<h2>Свободные столы</h2>
+<form method="post" class="форма" action="/отчёты/свободные-столы">
+  <label class="поле">
+    <span class="подпись">Дата</span>
+    <input type="date" name="date" required>
+  </label>
+  <label class="поле">
+    <span class="подпись">Время начала</span>
+    <input type="time" name="start" required>
+  </label>
+  <label class="поле">
+    <span class="подпись">Время окончания</span>
+    <input type="time" name="end" required>
+  </label>
+  <label class="поле">
+    <span class="подпись">Количество гостей</span>
+    <input type="number" name="guests" min="1" required value="2">
+  </label>
+  <button class="кнопка" type="submit">Показать</button>
+</form>
+
+<h2>Статистика гостей</h2>
+<form method="post" class="форма" action="/отчёты/статистика-гостей">
+  <label class="поле">
+    <span class="подпись">Сколько строк показать</span>
+    <input type="number" name="limit" min="1" required value="10">
+  </label>
+  <button class="кнопка" type="submit">Показать</button>
+</form>
+
+<h2>Списание продуктов</h2>
+<form method="post" class="форма" action="/отчёты/списать-продукты">
+  <label class="поле">
+    <span class="подпись">Номер заказа</span>
+    <input type="number" name="order_id" min="1" required>
+  </label>
+  <button class="кнопка опасная" type="submit" onclick="return confirm('Выполнить списание продуктов?');">Выполнить</button>
+</form>
