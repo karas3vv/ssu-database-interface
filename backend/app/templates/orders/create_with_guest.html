@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-  <h1>Ввод заказа (создание гостя вручную)</h1>
+  <h1>Создать заказ</h1>
 
-  <form method="post" class="форма" action="/ввод-через-представление">
+  <form method="post" class="форма" action="/заказы/создать">
 
     <h3 style="margin: 12px 0;">Гость (ввод вручную)</h3>
 
@@ -23,12 +23,10 @@
 
     <h3 style="margin: 12px 0;">Аккаунт (опционально)</h3>
 
-    {# чтобы даже при unchecked ушло значение 0 #}
     <input type="hidden" name="create_user" value="0">
     <label class="поле">
       <span class="подпись">Создать аккаунт?</span>
       <input name="create_user" type="checkbox" value="1">
-      <div class="плашка">Если включить — будет добавлена запись в таблицу users.</div>
     </label>
 
     <label class="поле">
@@ -39,9 +37,8 @@
     <label class="поле">
       <span class="подпись">Пароль</span>
       <input name="password" type="password" placeholder="Введите пароль для аккаунта">
-      <div class="плашка">Будет автоматически зашифрован перед сохранением в БД.</div>
-</label>
-
+      <div class="плашка">Пароль будет автоматически захэширован (bcrypt) перед сохранением.</div>
+    </label>
 
     <label class="поле">
       <span class="подпись">Роль</span>
@@ -51,7 +48,7 @@
       </select>
     </label>
 
-    <h3 style="margin: 12px 0;">Заказ</h3>
+    <h3 style="margin: 12px 0;">Параметры заказа</h3>
 
     <label class="поле">
       <span class="подпись">Стол</span>

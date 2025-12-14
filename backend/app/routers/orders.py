@@ -6,9 +6,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from passlib.hash import bcrypt
 
 from ..db import get_db
 from ..deps import require_login, require_admin
+
 
 router = APIRouter(prefix="/заказы", tags=["Заказы"])
 
@@ -101,7 +103,6 @@ def orders_chunk(
     next_cursor = rows[-1]["id"] if rows else None
     has_more = len(rows) == limit
 
-    # ВАЖНО: отдаём только partial со строками + новым триггером
     return templates.TemplateResponse(
         "orders/_rows.html",
         {
@@ -120,24 +121,17 @@ def orders_chunk(
 def order_create_form(request: Request, db: Session = Depends(get_db)):
     user = require_admin(request)
 
-    guests = db.execute(text("SELECT id, last_name, first_name FROM guests ORDER BY last_name, first_name")).mappings().all()
     tables_ = db.execute(text("SELECT id, table_number FROM tables ORDER BY table_number")).mappings().all()
     waiters = db.execute(text("SELECT id, last_name, first_name FROM waiters ORDER BY last_name, first_name")).mappings().all()
 
     return templates.TemplateResponse(
-        "orders/edit.html",
+        "orders/create_with_guest.html",
         {
             "request": request,
             "user": user,
             "title": "Создать заказ",
-            "action": "/заказы/создать",
-            "order": {"guest_id": "", "table_id": "", "waiter_id": "", "status": "new"},
-            "guests": guests,
             "tables": tables_,
             "waiters": waiters,
-            "items": [],
-            "dishes": [],
-            "allow_edit": True,
         },
     )
 
@@ -146,37 +140,106 @@ def order_create_form(request: Request, db: Session = Depends(get_db)):
 def order_create(
     request: Request,
     db: Session = Depends(get_db),
-    guest_id: int = Form(...),
+
+    # гость руками
+    guest_last_name: str = Form(...),
+    guest_first_name: str = Form(...),
+    guest_middle_name: str = Form(""),
+
+    # опционально аккаунт
+    create_user: str = Form("0"),
+    login: str = Form(""),
+    password: str = Form(""),
+    role: str = Form("user"),
+
+    # заказ
     table_id: str = Form(""),
     waiter_id: str = Form(""),
-    status: str = Form("new"),
+    total_amount: str = Form("0"),
+    status: str = Form("создан"),
+    booking_id: str = Form(""),
 ):
     require_admin(request)
 
-    row = db.execute(
-        text(
-            """
-            INSERT INTO orders(guest_id, table_id, waiter_id, order_time, total_amount, status)
+    # сумма
+    try:
+        total_amount_num = float((total_amount or "0").replace(",", "."))
+    except ValueError:
+        total_amount_num = 0.0
+
+    # статус
+    STATUS_MAP = {
+        "new": "создан",
+        "created": "создан",
+        "paid": "оплачен",
+        "cancelled": "отменён",
+        "создан": "создан",
+        "оплачен": "оплачен",
+        "отменён": "отменён",
+    }
+    status_ru = STATUS_MAP.get((status or "").strip().lower(), "создан")
+
+    # 1) создаём гостя
+    guest_id = db.execute(
+        text("""
+            INSERT INTO guests (last_name, first_name, middle_name, birth_date, total_orders, total_discount)
+            VALUES (:ln, :fn, NULLIF(:mn, ''), NULL, 0, 0)
+            RETURNING id
+        """),
+        {
+            "ln": guest_last_name.strip(),
+            "fn": guest_first_name.strip(),
+            "mn": guest_middle_name.strip(),
+        },
+    ).scalar_one()
+
+    # 2) опционально создаём аккаунт (пароль -> bcrypt hash)
+    if (create_user or "").strip() == "1":
+        role_norm = (role or "user").strip().lower()
+        if role_norm not in ("admin", "user"):
+            role_norm = "user"
+
+        if not login.strip():
+            raise ValueError("login is required")
+        if not password:
+            raise ValueError("password is required")
+
+        password_hash = bcrypt.hash(password)
+
+        db.execute(
+            text("""
+                INSERT INTO users (login, password_hash, role)
+                VALUES (:login, :ph, :role)
+            """),
+            {"login": login.strip(), "ph": password_hash, "role": role_norm},
+        )
+
+    # 3) создаём заказ
+    order_id = db.execute(
+        text("""
+            INSERT INTO orders(guest_id, table_id, waiter_id, order_time, total_amount, status, booking_id)
             VALUES (:guest_id,
                     NULLIF(:table_id,'')::int,
                     NULLIF(:waiter_id,'')::int,
                     :order_time,
-                    0,
-                    :status)
+                    :total_amount,
+                    :status,
+                    NULLIF(:booking_id,'')::int)
             RETURNING id
-            """
-        ),
+        """),
         {
             "guest_id": guest_id,
             "table_id": table_id,
             "waiter_id": waiter_id,
             "order_time": datetime.now(),
-            "status": status.strip(),
+            "total_amount": total_amount_num,
+            "status": status_ru,
+            "booking_id": booking_id,
         },
     ).scalar_one()
 
     db.commit()
-    return RedirectResponse(url=f"/заказы/{row}", status_code=303)
+    return RedirectResponse(url=f"/заказы/{order_id}", status_code=303)
 
 
 @router.get("/{order_id}", response_class=HTMLResponse)

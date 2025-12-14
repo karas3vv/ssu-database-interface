@@ -2,9 +2,10 @@
 {% block content %}
   <h1>Заказы</h1>
 
-  {% if allow_edit %}
-    <p><a class="кнопка" href="/заказы/создать">Создать заказ</a></p>
-  {% endif %}
+{% if allow_edit %}
+  <p><a class="кнопка" href="/заказы/создать">Создать заказ (новый гость)</a></p>
+{% endif %}
+
 
   <div class="таблица-обертка">
     <table class="таблица">
