@@ -3,18 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ title or "Интерфейс базы данных ресторана" }}</title>
+  <title>{{ title or "БД ресторана" }}</title>
   <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
 </head>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
 <body>
   <header class="шапка">
     <div class="контейнер строка">
-      <div class="логотип">Ресторан</div>
+      <div class="логотип">Ресторан "У Карасика"</div>
       <nav class="меню">
         <a class="ссылка" href="/">Главная</a>
 
         {% if user %}
-          <a class="ссылка" href="/справочники/блюда">Справочники</a>
+          <a class="ссылка" href="/справочники">Справочники</a>
           <a class="ссылка" href="/заказы">Заказы</a>
           <a class="ссылка" href="/отчёты">Отчёты</a>
           <a class="ссылка" href="/ввод-через-представление">Ввод через представление</a>

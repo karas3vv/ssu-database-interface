@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <form method="post" class="форма" action="{{ action }}">
+    <label class="поле">
+      <span class="подпись">Наименование</span>
+      <input name="name" type="text" required value="{{ values.name or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Масса единицы</span>
+      <input name="weight" type="number" step="0.01" min="0" value="{{ values.weight or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Срок годности</span>
+      <input name="expiry_date" type="date" value="{{ values.expiry_date or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Количество на складе</span>
+      <input name="quantity" type="number" step="0.01" min="0" value="{{ values.quantity or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Категория</span>
+      <input name="category" type="text" value="{{ values.category or '' }}">
+    </label>
+
+    <button class="кнопка" type="submit">Сохранить</button>
+    <a class="кнопка вторичная" href="/справочники/продукты">Отмена</a>
+  </form>
+{% endblock %}

@@ -7,12 +7,36 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ..db import get_db
+from ..errors import safe_commit
 from ..deps import require_login, require_admin
+
 
 router = APIRouter(prefix="/справочники", tags=["Справочники"])
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+def render_db_error(request: Request, back_url: str, message: str, status_code: int = 400):
+    return templates.TemplateResponse(
+        "error.html",
+        {
+            "request": request,
+            "user": request.session.get("user"),
+            "message": message,
+            "back_url": back_url,
+        },
+        status_code=status_code,
+    )
+
+
+@router.get("", response_class=HTMLResponse)
+def dictionaries_index(request: Request):
+    user = require_login(request)
+    return templates.TemplateResponse(
+        "admin/index.html",
+        {"request": request, "user": user, "title": "Справочники"},
+    )
 
 
 @router.get("/блюда", response_class=HTMLResponse)
@@ -21,6 +45,7 @@ def dishes_list(request: Request, db: Session = Depends(get_db)):
     rows = db.execute(
         text("SELECT id, name, category, price, country_of_origin FROM dishes ORDER BY id")
     ).mappings().all()
+
     return templates.TemplateResponse(
         "admin/list.html",
         {
@@ -59,7 +84,7 @@ def dishes_create_form(request: Request):
     )
 
 
-@router.post("/блюда/добавить")
+@router.post("/блюда/добавить", response_class=HTMLResponse)
 def dishes_create(
     request: Request,
     db: Session = Depends(get_db),
@@ -69,6 +94,7 @@ def dishes_create(
     country_of_origin: str = Form(""),
 ):
     require_admin(request)
+
     db.execute(
         text(
             """
@@ -83,24 +109,25 @@ def dishes_create(
             "country_of_origin": country_of_origin.strip(),
         },
     )
-    db.commit()
+
+    err = safe_commit(db)
+    if err:
+        return render_db_error(request, "/справочники/блюда", err)
+
     return RedirectResponse(url="/справочники/блюда", status_code=303)
 
 
 @router.get("/блюда/изменить/{dish_id}", response_class=HTMLResponse)
 def dishes_edit_form(dish_id: int, request: Request, db: Session = Depends(get_db)):
     user = require_admin(request)
+
     row = db.execute(
         text("SELECT id, name, category, price, country_of_origin FROM dishes WHERE id=:id"),
         {"id": dish_id},
     ).mappings().first()
 
     if not row:
-        return templates.TemplateResponse(
-            "message.html",
-            {"request": request, "user": user, "title": "Ошибка", "message": "Запись не найдена."},
-            status_code=404,
-        )
+        return render_db_error(request, "/справочники/блюда", "Запись не найдена.", status_code=404)
 
     return templates.TemplateResponse(
         "admin/edit.html",
@@ -114,7 +141,7 @@ def dishes_edit_form(dish_id: int, request: Request, db: Session = Depends(get_d
     )
 
 
-@router.post("/блюда/изменить/{dish_id}")
+@router.post("/блюда/изменить/{dish_id}", response_class=HTMLResponse)
 def dishes_edit(
     dish_id: int,
     request: Request,
@@ -125,6 +152,7 @@ def dishes_edit(
     country_of_origin: str = Form(""),
 ):
     require_admin(request)
+
     db.execute(
         text(
             """
@@ -144,13 +172,22 @@ def dishes_edit(
             "country_of_origin": country_of_origin.strip(),
         },
     )
-    db.commit()
+
+    err = safe_commit(db)
+    if err:
+        return render_db_error(request, f"/справочники/блюда/изменить/{dish_id}", err)
+
     return RedirectResponse(url="/справочники/блюда", status_code=303)
 
 
-@router.post("/блюда/удалить/{dish_id}")
+@router.post("/блюда/удалить/{dish_id}", response_class=HTMLResponse)
 def dishes_delete(dish_id: int, request: Request, db: Session = Depends(get_db)):
     require_admin(request)
+
     db.execute(text("DELETE FROM dishes WHERE id=:id"), {"id": dish_id})
-    db.commit()
+
+    err = safe_commit(db)
+    if err:
+        return render_db_error(request, "/справочники/блюда", err)
+
     return RedirectResponse(url="/справочники/блюда", status_code=303)

@@ -1,7 +1,7 @@
 from pathlib import Path
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
@@ -17,8 +17,13 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 @router.get("", response_class=HTMLResponse)
-def orders_list(request: Request, db: Session = Depends(get_db)):
+def orders_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    limit: int = Query(50),
+):
     user = require_login(request)
+    limit = max(10, min(limit, 200))
 
     rows = db.execute(
         text(
@@ -36,9 +41,14 @@ def orders_list(request: Request, db: Session = Depends(get_db)):
             LEFT JOIN tables t ON t.id = o.table_id
             LEFT JOIN waiters w ON w.id = o.waiter_id
             ORDER BY o.id DESC
+            LIMIT :limit
             """
-        )
+        ),
+        {"limit": limit},
     ).mappings().all()
+
+    next_cursor = rows[-1]["id"] if rows else None
+    has_more = len(rows) == limit
 
     return templates.TemplateResponse(
         "orders/list.html",
@@ -48,6 +58,60 @@ def orders_list(request: Request, db: Session = Depends(get_db)):
             "title": "Заказы",
             "rows": rows,
             "allow_edit": user.get("role") == "admin",
+            "limit": limit,
+            "next_cursor": next_cursor,
+            "has_more": has_more,
+        },
+    )
+
+
+@router.get("/кусок", response_class=HTMLResponse)
+def orders_chunk(
+    request: Request,
+    db: Session = Depends(get_db),
+    cursor: int = Query(...),
+    limit: int = Query(50),
+):
+    user = require_login(request)
+    limit = max(10, min(limit, 200))
+
+    rows = db.execute(
+        text(
+            """
+            SELECT
+              o.id,
+              o.order_time,
+              o.status,
+              o.total_amount,
+              g.last_name || ' ' || g.first_name AS guest_name,
+              t.table_number AS table_number,
+              w.last_name || ' ' || w.first_name AS waiter_name
+            FROM orders o
+            LEFT JOIN guests g ON g.id = o.guest_id
+            LEFT JOIN tables t ON t.id = o.table_id
+            LEFT JOIN waiters w ON w.id = o.waiter_id
+            WHERE o.id < :cursor
+            ORDER BY o.id DESC
+            LIMIT :limit
+            """
+        ),
+        {"cursor": cursor, "limit": limit},
+    ).mappings().all()
+
+    next_cursor = rows[-1]["id"] if rows else None
+    has_more = len(rows) == limit
+
+    # ВАЖНО: отдаём только partial со строками + новым триггером
+    return templates.TemplateResponse(
+        "orders/_rows.html",
+        {
+            "request": request,
+            "user": user,
+            "rows": rows,
+            "allow_edit": user.get("role") == "admin",
+            "limit": limit,
+            "next_cursor": next_cursor,
+            "has_more": has_more,
         },
     )
 

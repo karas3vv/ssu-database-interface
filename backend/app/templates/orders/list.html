@@ -20,19 +20,9 @@
           <th></th>
         </tr>
       </thead>
-      <tbody>
-        {% for r in rows %}
-          <tr>
-            <td>{{ r.id }}</td>
-            <td>{{ r.order_time }}</td>
-            <td>{{ r.guest_name or "" }}</td>
-            <td>{{ r.table_number or "" }}</td>
-            <td>{{ r.waiter_name or "" }}</td>
-            <td>{{ r.status or "" }}</td>
-            <td>{{ r.total_amount or 0 }}</td>
-            <td><a class="кнопка вторичная" href="/заказы/{{ r.id }}">Открыть</a></td>
-          </tr>
-        {% endfor %}
+
+      <tbody id="orders-body">
+        {% include "orders/_rows.html" %}
       </tbody>
     </table>
   </div>

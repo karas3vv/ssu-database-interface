@@ -151,3 +151,27 @@ select {
   border-radius: 8px;
   background: #fff;
 }
+
+.карточки {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.карточка {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #d9dee6;
+  border-radius: 12px;
+  padding: 14px;
+  text-decoration: none;
+  color: #111;
+}
+
+
+.карточка:hover {
+  border-color: #0b57d0;
+}

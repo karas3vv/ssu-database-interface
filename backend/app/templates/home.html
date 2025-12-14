@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Главная</h1>
+
+{% if user and stats %}
+  <div class="плашка">
+    Заказов в базе: {{ stats.orders_count }}. Общая сумма заказов: {{ stats.total_revenue }}.
+  </div>
+{% endif %}
+
+  <div class="карточки">
+    <a class="карточка" href="/справочники">Справочники (создать данные)</a>
+    <a class="карточка" href="/заказы">Заказы</a>
+    <a class="карточка" href="/отчёты">Отчёты</a>
+    <a class="карточка" href="/поиск">Поиск</a>
+
+    {% if user and user.role == "admin" %}
+      <a class="карточка" href="/ввод-через-представление">Ввод через представление</a>
+    {% endif %}
+  </div>
+{% endblock %}

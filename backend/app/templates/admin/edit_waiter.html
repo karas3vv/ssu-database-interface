@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <form method="post" class="форма" action="{{ action }}">
+    <label class="поле">
+      <span class="подпись">Фамилия</span>
+      <input name="last_name" type="text" required value="{{ values.last_name or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Имя</span>
+      <input name="first_name" type="text" required value="{{ values.first_name or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Отчество</span>
+      <input name="middle_name" type="text" value="{{ values.middle_name or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Оклад</span>
+      <input name="salary" type="number" step="0.01" min="0" value="{{ values.salary or '' }}">
+    </label>
+
+    <button class="кнопка" type="submit">Сохранить</button>
+    <a class="кнопка вторичная" href="/справочники/официанты">Отмена</a>
+  </form>
+{% endblock %}

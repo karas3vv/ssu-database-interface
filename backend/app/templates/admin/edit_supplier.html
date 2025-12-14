@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <form method="post" class="форма" action="{{ action }}">
+    <label class="поле">
+      <span class="подпись">Название</span>
+      <input name="name" type="text" required value="{{ values.name or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Адрес</span>
+      <input name="address" type="text" value="{{ values.address or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Контактное лицо</span>
+      <input name="contact_person" type="text" value="{{ values.contact_person or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Телефон</span>
+      <input name="phone" type="text" value="{{ values.phone or '' }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Электронная почта</span>
+      <input name="email" type="text" value="{{ values.email or '' }}">
+    </label>
+
+    <button class="кнопка" type="submit">Сохранить</button>
+    <a class="кнопка вторичная" href="/справочники/поставщики">Отмена</a>
+  </form>
+{% endblock %}
