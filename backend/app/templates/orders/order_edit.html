@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Заказ #{{ order.id }}</h1>
+
+  <div class="плашка" style="margin-bottom:12px;">
+    Статус: {{ order.status }}<br>
+    Сумма: {{ order.total_amount }}
+  </div>
+
+  <div class="плашка" style="margin-bottom:12px;">
+    <form method="post" action="/заказ/{{ order.id }}/добавить" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+      <label class="поле">
+        <span class="подпись">Блюдо</span>
+        <select name="dish_id" required>
+          {% for d in dishes %}
+            <option value="{{ d.id }}">{{ d.name }} ({{ d.price }})</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label class="поле">
+        <span class="подпись">Кол-во</span>
+        <input name="qty" type="number" min="1" value="1" required>
+      </label>
+
+      <button class="кнопка" type="submit">Добавить</button>
+      <a class="кнопка вторичная" href="/профиль">В профиль</a>
+    </form>
+  </div>
+
+  <h2>Позиции</h2>
+  {% if items %}
+    <table class="таблица">
+      <thead>
+        <tr><th>Блюдо</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+          <tr>
+            <td>{{ it.name }}</td>
+            <td>{{ it.qty }}</td>
+            <td>{{ it.price }}</td>
+            <td>{{ it.line_total }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="плашка">Пока нет позиций. Добавь блюдо выше.</div>
+  {% endif %}
+{% endblock %}
