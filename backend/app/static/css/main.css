@@ -175,3 +175,18 @@ select {
 .карточка:hover {
   border-color: #0b57d0;
 }
+
+.error-page {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.error-page .btn {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+}

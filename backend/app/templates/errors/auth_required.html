@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="плашка" style="margin-top: 48px; max-width: 640px;">
+    <h2 style="margin: 0 0 8px 0;">Доступ ограничен</h2>
+    <div style="opacity: .9; margin-bottom: 16px;">
+      Нужно войти, чтобы открыть эту страницу.
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <a class="кнопка" href="/вход?next={{ request.url.path }}">Войти</a>
+      <a class="кнопка вторичная" href="/">На главную</a>
+    </div>
+  </div>
+{% endblock %}

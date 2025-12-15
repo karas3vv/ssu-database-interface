@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from passlib.hash import bcrypt
+from passlib.hash import pbkdf2_sha256  # <-- ВАЖНО: вместо bcrypt/bcrypt_sha256
 
 from ..db import get_db
 from ..deps import require_login, require_admin
@@ -193,7 +193,7 @@ def order_create(
         },
     ).scalar_one()
 
-    # 2) опционально создаём аккаунт (пароль -> bcrypt hash)
+    # 2) опционально создаём аккаунт (пароль -> хэш PBKDF2-SHA256)
     if (create_user or "").strip() == "1":
         role_norm = (role or "user").strip().lower()
         if role_norm not in ("admin", "user"):
@@ -204,7 +204,7 @@ def order_create(
         if not password:
             raise ValueError("password is required")
 
-        password_hash = bcrypt.hash(password)
+        password_hash = pbkdf2_sha256.hash(password)
 
         db.execute(
             text("""

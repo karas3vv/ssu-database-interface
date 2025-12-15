@@ -1,4 +1,4 @@
-from fastapi import Request, HTTPException
+from fastapi import HTTPException, status, Request
 
 
 def get_current_user(request: Request):
@@ -14,7 +14,11 @@ def require_login(request: Request):
 
 
 def require_admin(request: Request):
-    user = require_login(request)
-    if user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Недостаточно прав.")
+    user = request.session.get("user")  # или как у тебя хранится пользователь в сессии
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="auth_required",
+        )
     return user
+

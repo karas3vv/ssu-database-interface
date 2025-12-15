@@ -8,6 +8,7 @@
   {% endif %}
 
   <form method="post" class="форма" action="/вход">
+    <input type="hidden" name="next" value="{{ next or '/' }}">  <!-- сюда -->
     <label class="поле">
       <span class="подпись">Логин</span>
       <input name="login" type="text" required autocomplete="username">

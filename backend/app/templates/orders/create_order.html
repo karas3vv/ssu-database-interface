@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Создать заказ</h1>
+
+  <form method="post" class="плашка" style="max-width: 520px;">
+    <label>Столик</label><br>
+    <select name="table_id">
+      <option value="">Не выбирать</option>
+      {% for t in tables %}
+        <option value="{{ t.id }}">Стол №{{ t.table_number }}</option>
+      {% endfor %}
+    </select>
+
+    <div style="margin-top: 12px;">
+      <button class="кнопка" type="submit">Создать</button>
+      <a class="кнопка вторичная" href="/профиль">Отмена</a>
+    </div>
+  </form>
+{% endblock %}
