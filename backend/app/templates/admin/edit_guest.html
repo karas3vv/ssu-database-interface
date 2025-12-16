@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set title = title %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<form method="post" action="{{ action }}">
+    <label>Фамилия: 
+        <input type="text" name="last_name" value="{{ values.last_name }}" required>
+    </label><br><br>
+    
+    <label>Имя: 
+        <input type="text" name="first_name" value="{{ values.first_name }}" required>
+    </label><br><br>
+    
+    <label>Отчество: 
+        <input type="text" name="middle_name" value="{{ values.middle_name or '' }}">
+    </label><br><br>
+    
+    <label>Дата рождения: 
+        <input type="date" name="birth_date" value="{{ values.birth_date or '' }}">
+    </label><br><br>
+    
+    <label>Общее кол-во заказов: 
+        <input type="number" name="total_orders" value="{{ values.total_orders or 0 }}" min="0">
+    </label><br><br>
+    
+    <label>Общая скидка: 
+        <input type="number" step="0.01" name="total_discount" value="{{ values.total_discount or 0 }}" min="0">
+    </label><br><br>
+    
+    <button type="submit">Сохранить изменения</button>
+</form>
+
+<br>
+<a href="/справочники/гости">← Назад к списку гостей</a>
+{% endblock %}

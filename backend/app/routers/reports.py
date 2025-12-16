@@ -29,9 +29,10 @@ def report_revenue(
 ):
     user = require_login(request)
     value = db.execute(
-        text("SELECT get_revenue(:d1::date, :d2::date) AS revenue"),
+        text("SELECT get_revenue(CAST(:d1 AS date), CAST(:d2 AS date)) AS revenue"),
         {"d1": date_from, "d2": date_to},
     ).mappings().first()
+
 
     return templates.TemplateResponse(
         "reports/result_table.html",
@@ -110,9 +111,18 @@ def report_free_tables(
     user = require_login(request)
 
     rows = db.execute(
-        text("SELECT * FROM free_tables(:d::date, :s::time, :e::time, :g::int)"),
+        text("""
+            SELECT * 
+            FROM free_tables(
+                CAST(:d AS date),
+                CAST(:s AS time),
+                CAST(:e AS time),
+                CAST(:g AS int)
+            )
+        """),
         {"d": date, "s": start, "e": end, "g": guests},
     ).mappings().all()
+
 
     columns = [
         ("id", "Идентификатор"),

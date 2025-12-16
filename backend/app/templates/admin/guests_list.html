@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set title = title %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+{% if allow_edit %}
+    <a href="/справочники/гости/создать" class="button">Добавить гостя</a>
+{% endif %}
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>ФИО</th>
+            <th>Дата рождения</th>
+            <th>Заказов</th>
+            <th>Скидка</th>
+            {% if allow_edit %}<th>Действия</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.last_name }} {{ row.first_name }} {{ row.middle_name or '' }}</td>
+            <td>{{ row.birth_date or '' }}</td>
+            <td>{{ row.total_orders }}</td>
+            <td>{{ "%.2f"|format(row.total_discount) }} ₽</td>
+            {% if allow_edit %}
+            <td>
+                <a href="/справочники/гости/изменить/{{ row.id }}">Изменить</a>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

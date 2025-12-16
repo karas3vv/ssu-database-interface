@@ -127,7 +127,7 @@ input {
 }
 
 .таблица th, .таблица td {
-  padding: 10px 12px;
+  padding: 10px 9px;
   border-bottom: 1px solid #e5e9f0;
   text-align: left;
   vertical-align: top;
@@ -136,7 +136,9 @@ input {
 .действия {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .кнопка.опасная {
@@ -189,4 +191,11 @@ select {
   padding: 10px 14px;
   border-radius: 10px;
   text-decoration: none;
+}
+
+.таблица td:last-child {
+  width: 1%;
+  white-space: nowrap;
+  padding-left: 8px;
+  padding-right: 0;
 }

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <form method="post" class="форма" action="{{ action }}">
+    <label class="поле">
+      <span class="подпись">Номер стола</span>
+      <input name="table_number" type="number" required value="{{ values.table_number }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Количество мест</span>
+      <input name="seats" type="number" min="1" required value="{{ values.seats }}">
+    </label>
+
+    <label class="поле">
+      <span class="подпись">Статус</span>
+      <input name="status" type="text" value="{{ values.status or '' }}">
+      {# если хочешь фиксированный список:
+      <select name="status">
+        <option value="свободен"  {{ 'selected' if values.status == 'свободен'  else '' }}>свободен</option>
+        <option value="занят"     {{ 'selected' if values.status == 'занят'     else '' }}>занят</option>
+        <option value="забронирован" {{ 'selected' if values.status == 'забронирован' else '' }}>забронирован</option>
+      </select>
+      #}
+    </label>
+
+    <button class="кнопка" type="submit">Сохранить</button>
+    <a class="кнопка вторичная" href="/справочники/столы">Отмена</a>
+  </form>
+{% endblock %}
