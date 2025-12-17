@@ -15,8 +15,26 @@
     <button class="кнопка" type="submit">Показать</button>
   </form>
 
-  <h2>Продажи блюд</h2>
+  <h2>Продажи всех блюд</h2>
   <form method="post" class="форма" action="/отчёты/продажи-блюд">
+    <button class="кнопка" type="submit">Показать</button>
+  </form>
+
+  <h2>Продажи конкретного блюда</h2>
+  <form method="post" class="форма" action="/отчёты/продажи-конкретного-блюда">
+    <label class="поле">
+      <span class="подпись">Название блюда (часть)</span>
+      <input type="text" name="dish_name" required>
+    </label>
+    <button class="кнопка" type="submit">Показать</button>
+  </form>
+
+  <h2>Блюда категории</h2>
+  <form method="post" class="форма" action="/отчёты/блюда-категории">
+    <label class="поле">
+      <span class="подпись">Категория (часть)</span>
+      <input type="text" name="category" required>
+    </label>
     <button class="кнопка" type="submit">Показать</button>
   </form>
 

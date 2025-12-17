@@ -17,7 +17,10 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 @router.get("", response_class=HTMLResponse)
 def reports_index(request: Request):
     user = require_login(request)
-    return templates.TemplateResponse("reports/index.html", {"request": request, "user": user, "title": "Отчёты"})
+    return templates.TemplateResponse(
+        "reports/index.html",
+        {"request": request, "user": user, "title": "Отчёты"},
+    )
 
 
 @router.post("/выручка", response_class=HTMLResponse)
@@ -32,7 +35,6 @@ def report_revenue(
         text("SELECT get_revenue(CAST(:d1 AS date), CAST(:d2 AS date)) AS revenue"),
         {"d1": date_from, "d2": date_to},
     ).mappings().first()
-
 
     return templates.TemplateResponse(
         "reports/result_table.html",
@@ -69,6 +71,7 @@ def report_dishes_sales(request: Request, db: Session = Depends(get_db)):
         },
     )
 
+
 @router.post("/заказы-гостя", response_class=HTMLResponse)
 def report_guest_orders(
     request: Request,
@@ -95,7 +98,14 @@ def report_guest_orders(
 
     return templates.TemplateResponse(
         "reports/result_table.html",
-        {"request": request, "user": user, "title": "Заказы гостя", "columns": columns, "rows": rows, "back_url": "/отчёты"},
+        {
+            "request": request,
+            "user": user,
+            "title": "Заказы гостя",
+            "columns": columns,
+            "rows": rows,
+            "back_url": "/отчёты",
+        },
     )
 
 
@@ -111,7 +121,8 @@ def report_free_tables(
     user = require_login(request)
 
     rows = db.execute(
-        text("""
+        text(
+            """
             SELECT * 
             FROM free_tables(
                 CAST(:d AS date),
@@ -119,10 +130,10 @@ def report_free_tables(
                 CAST(:e AS time),
                 CAST(:g AS int)
             )
-        """),
+            """
+        ),
         {"d": date, "s": start, "e": end, "g": guests},
     ).mappings().all()
-
 
     columns = [
         ("id", "Идентификатор"),
@@ -133,7 +144,14 @@ def report_free_tables(
 
     return templates.TemplateResponse(
         "reports/result_table.html",
-        {"request": request, "user": user, "title": "Свободные столы", "columns": columns, "rows": rows, "back_url": "/отчёты"},
+        {
+            "request": request,
+            "user": user,
+            "title": "Свободные столы",
+            "columns": columns,
+            "rows": rows,
+            "back_url": "/отчёты",
+        },
     )
 
 
@@ -160,7 +178,14 @@ def report_guest_statistics(
 
     return templates.TemplateResponse(
         "reports/result_table.html",
-        {"request": request, "user": user, "title": "Статистика гостей", "columns": columns, "rows": rows, "back_url": "/отчёты"},
+        {
+            "request": request,
+            "user": user,
+            "title": "Статистика гостей",
+            "columns": columns,
+            "rows": rows,
+            "back_url": "/отчёты",
+        },
     )
 
 
@@ -172,8 +197,10 @@ def action_consume_products(
 ):
     user = require_login(request)
 
-    # Важно: функция меняет данные, поэтому коммитим.
-    row = db.execute(text("SELECT consume_products(:order_id) AS result"), {"order_id": order_id}).mappings().first()
+    row = db.execute(
+        text("SELECT consume_products(:order_id) AS result"),
+        {"order_id": order_id},
+    ).mappings().first()
     db.commit()
 
     columns = [("result", "Результат")]
@@ -181,5 +208,144 @@ def action_consume_products(
 
     return templates.TemplateResponse(
         "reports/result_table.html",
-        {"request": request, "user": user, "title": "Списание продуктов по заказу", "columns": columns, "rows": rows, "back_url": "/отчёты"},
+        {
+            "request": request,
+            "user": user,
+            "title": "Списание продуктов по заказу",
+            "columns": columns,
+            "rows": rows,
+            "back_url": "/отчёты",
+        },
     )
+
+
+# --- НОВОЕ: статистика по конкретному блюду ---
+
+
+@router.post("/продажи-конкретного-блюда", response_class=HTMLResponse)
+def report_single_dish_sales(
+    request: Request,
+    db: Session = Depends(get_db),
+    dish_name: str = Form(...),
+):
+    user = require_login(request)
+
+    rows = db.execute(
+        text(
+            """
+            SELECT
+              d.name AS dish_name,
+              SUM(oi.quantity) AS total_sold,
+              SUM(oi.quantity * d.price) AS total_revenue,
+              COUNT(DISTINCT oi.order_id) AS orders_count
+            FROM order_items oi
+            JOIN dishes d ON d.id = oi.dish_id
+            WHERE d.name ILIKE '%' || :dish_name || '%'
+            GROUP BY d.name
+            ORDER BY total_revenue DESC
+            """
+        ),
+        {"dish_name": dish_name.strip()},
+    ).mappings().all()
+
+    columns = [
+        ("dish_name", "Блюдо"),
+        ("total_sold", "Продано (шт.)"),
+        ("total_revenue", "Выручка"),
+        ("orders_count", "Кол-во заказов"),
+    ]
+
+    return templates.TemplateResponse(
+        "reports/result_table.html",
+        {
+            "request": request,
+            "user": user,
+            "title": f"Продажи блюда «{dish_name}»",
+            "columns": columns,
+            "rows": rows,
+            "back_url": "/отчёты",
+        },
+    )
+
+
+# --- НОВОЕ: статистика по категории блюда ---
+
+
+@router.post("/продажи-категории", response_class=HTMLResponse)
+def report_category_sales(
+    request: Request,
+    db: Session = Depends(get_db),
+    category: str = Form(...),
+):
+    user = require_login(request)
+
+    rows = db.execute(
+        text(
+            """
+            SELECT
+              d.category,
+              SUM(oi.quantity) AS total_sold,
+              SUM(oi.quantity * d.price) AS total_revenue,
+              COUNT(DISTINCT oi.order_id) AS orders_count
+            FROM order_items oi
+            JOIN dishes d ON d.id = oi.dish_id
+            WHERE d.category ILIKE '%' || :category || '%'
+            GROUP BY d.category
+            ORDER BY total_revenue DESC
+            """
+        ),
+        {"category": category.strip()},
+    ).mappings().all()
+
+    columns = [
+        ("category", "Категория"),
+        ("total_sold", "Продано (шт.)"),
+        ("total_revenue", "Выручка"),
+        ("orders_count", "Кол-во заказов"),
+    ]
+
+    return templates.TemplateResponse(
+        "reports/result_table.html",
+        {
+            "request": request,
+            "user": user,
+            "title": f"Продажи по категории «{category}»",
+            "columns": columns,
+            "rows": rows,
+            "back_url": "/отчёты",
+        },
+    )
+
+@router.post("/блюда-категории", response_class=HTMLResponse)
+def report_dishes_by_category(
+    request: Request,
+    db: Session = Depends(get_db),
+    category: str = Form(...),
+):
+    user = require_login(request)
+
+    rows = db.execute(
+        text("SELECT * FROM dishes_by_category(:category)"),
+        {"category": category.strip()},
+    ).mappings().all()
+
+    columns = [
+        ("id", "ID"),
+        ("name", "Блюдо"),
+        ("category", "Категория"),
+        ("total_sold", "Продано (шт.)"),
+        ("total_revenue", "Выручка"),
+    ]
+
+    return templates.TemplateResponse(
+        "reports/result_table.html",
+        {
+            "request": request,
+            "user": user,
+            "title": f"Блюда категории «{category}»",
+            "columns": columns,
+            "rows": rows,
+            "back_url": "/отчёты",
+        },
+    )
+

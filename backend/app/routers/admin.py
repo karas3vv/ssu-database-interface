@@ -154,24 +154,23 @@ def dishes_edit(
     require_admin(request)
 
     db.execute(
-        text(
-            """
+        text("""
             UPDATE dishes
-            SET name=:name,
-                category=NULLIF(:category,''),
-                price=:price::numeric,
-                country_of_origin=NULLIF(:country_of_origin,'')
-            WHERE id=:id
-            """
-        ),
+            SET name = :name,
+                category = NULLIF(:category, ''),
+                price = CAST(:price AS numeric),
+                country_of_origin = NULLIF(:country_of_origin, '')
+            WHERE id = :id
+        """),
         {
             "id": dish_id,
             "name": name.strip(),
             "category": category.strip(),
-            "price": price,
+            "price": price,  # строка из формы, можно "123.45"
             "country_of_origin": country_of_origin.strip(),
         },
     )
+
 
     err = safe_commit(db)
     if err:
